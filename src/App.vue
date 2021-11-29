@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <h2>Users Table</h2>
     <Spreadsheet />
   </div>
 </template>
