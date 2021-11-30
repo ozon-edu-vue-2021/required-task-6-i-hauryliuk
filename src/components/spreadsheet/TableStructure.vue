@@ -1,10 +1,12 @@
 <script>
   import SortControl from '@/components/SortControl.vue';
+  import FilterControl from '@/components/FilterControl.vue';
 
   export default {
     name: 'TableStructure',
     components: {
       SortControl,
+      FilterControl,
     },
     props: {
       rows: {
@@ -23,6 +25,10 @@
             { class: { 'thead-cell': true }, },
             [
               renderedLabel,
+              h(FilterControl, {
+                props: { field: column.field },
+                on: this.$listeners,
+              }),
               h(SortControl, {
                 props: { field: column.field },
                 on: this.$listeners,
@@ -83,6 +89,6 @@
 <style scoped>
   .thead-cell {
     position: relative;
-    padding-right: 1em;
+    padding-right: 2em;
   }
 </style>

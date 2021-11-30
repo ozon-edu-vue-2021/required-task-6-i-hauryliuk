@@ -1,12 +1,18 @@
 <template>
   <div>
     <div class="content" v-if="users">
-      <div>
+      <div class="modes">
         <button @click="setPaginatonMode('static')"><span>Static Pagination</span></button>
         <button @click="setPaginatonMode('infinite')"><span>Infinite Pagination</span></button>
       </div>
 
-      <TableStructure :rows="users" @sorting-initiated="sortHandler">
+      <TableStructure
+        :rows="users"
+        @sorting-initiated="sortHandler"
+        @filtering-initiated="filterInitHandler"
+        @filtering-canceled="filterCancelHandler"
+        @filter-term="filterValueHandler">
+
         <Column field="index" label="ID" />
         <Column field="name" label="Name" />
         <Column field="age" label="Age" />
@@ -84,10 +90,15 @@
         field: null,
         direction: null,
       },
+      filterOptions: {
+        field: null,
+        term: null,
+      },
     }),
     provide() {
       return {
         sortOptions: this.sortOptions,
+        filterOptions: this.filterOptions,
       }
     },
     computed: {
@@ -99,6 +110,41 @@
       },
     },
     methods: {
+      filterInitHandler(field) {
+        this.filterOptions.field = field;
+      },
+      async filterCancelHandler() {
+        this.filterOptions.field = null;
+        this.filterOptions.term = null;
+        const queryOptions = {};
+        if (this.sortOptions.field) {
+          queryOptions._sort = this.sortOptions.field;
+          queryOptions._order = this.sortOptions.direction;
+        }
+        if (this.paginationMode) {
+          this.users = null;
+          this.currentPage = INIT_CURRENT_PAGE;
+          queryOptions._page = this.currentPage;
+          queryOptions._limit = this.entriesPerPage;
+        }
+        await this.fetchData(queryOptions);
+      },
+      async filterValueHandler(value) {
+        this.filterOptions.term = value;
+        const queryParam = `${this.filterOptions.field}_like`;
+        const queryOptions = {[queryParam]: this.filterOptions.term,};
+        if (this.sortOptions.field) {
+          queryOptions._sort = this.sortOptions.field;
+          queryOptions._order = this.sortOptions.direction;
+        }
+        if (this.paginationMode) {
+          this.users = null;
+          this.currentPage = INIT_CURRENT_PAGE;
+          queryOptions._page = this.currentPage;
+          queryOptions._limit = this.entriesPerPage;
+        }
+        await this.fetchData(queryOptions);
+      },
       async sortHandler(field) {
         if (this.sortOptions.field !== field) {
           this.sortOptions.field = field;
@@ -114,6 +160,10 @@
           this.currentPage = INIT_CURRENT_PAGE;
           queryOptions._page = this.currentPage;
           queryOptions._limit = this.entriesPerPage;
+        }
+        if (this.filterOptions.term) {
+          const queryParam = `${this.filterOptions.field}_like`;
+          queryOptions[queryParam] = this.filterOptions.term;
         }
         await this.fetchData(queryOptions);
       },
@@ -131,6 +181,8 @@
         this.users = null;
         this.currentPage = INIT_CURRENT_PAGE;
         this.entriesPerPage = INIT_ENTRIES_PER_PAGE;
+        this.sortOptions.field = null;
+        this.sortOptions.direction = null;
         if (this.paginationMode) {
           await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
         } else {
@@ -174,5 +226,9 @@
 <style scoped>
   .content {
     padding-bottom: 6px;
+  }
+
+  .modes {
+    margin-bottom: 2em;
   }
 </style>
