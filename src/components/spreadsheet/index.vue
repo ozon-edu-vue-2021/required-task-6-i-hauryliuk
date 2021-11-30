@@ -6,7 +6,7 @@
         <button @click="setPaginatonMode('infinite')"><span>Infinite Pagination</span></button>
       </div>
 
-      <TableStructure :rows="users">
+      <TableStructure :rows="users" @sorting-initiated="sortHandler">
         <Column field="index" label="ID" />
         <Column field="name" label="Name" />
         <Column field="age" label="Age" />
@@ -80,7 +80,16 @@
       pageCount: null,
       paginationMode: null,
       loading: false,
+      sortOptions: {
+        field: null,
+        direction: null,
+      },
     }),
+    provide() {
+      return {
+        sortOptions: this.sortOptions,
+      }
+    },
     computed: {
       isStaticMode() {
         return this.paginationMode === STATIC_MODE;
@@ -90,6 +99,24 @@
       },
     },
     methods: {
+      async sortHandler(field) {
+        if (this.sortOptions.field !== field) {
+          this.sortOptions.field = field;
+          this.sortOptions.direction = 'asc';
+        } else {
+          this.sortOptions.direction === 'asc'
+            ? this.sortOptions.direction = 'desc'
+            : this.sortOptions.direction = 'asc';
+        }
+        const queryOptions = {_sort: this.sortOptions.field, _order: this.sortOptions.direction,};
+        if (this.paginationMode) {
+          this.users = null;
+          this.currentPage = INIT_CURRENT_PAGE;
+          queryOptions._page = this.currentPage;
+          queryOptions._limit = this.entriesPerPage;
+        }
+        await this.fetchData(queryOptions);
+      },
       async fetchData(params) {
         this.loading = true;
         const data = await api.getUsersData(params);
@@ -104,30 +131,40 @@
         this.users = null;
         this.currentPage = INIT_CURRENT_PAGE;
         this.entriesPerPage = INIT_ENTRIES_PER_PAGE;
-        switch (this.paginationMode) {
-          case STATIC_MODE:
-            await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
-            break;
-          case INFINITE_MODE:
-            await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
-            break;
-          default:
-            await this.fetchData();
+        if (this.paginationMode) {
+          await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
+        } else {
+          await this.fetchData();
         }
       },
       async gotoPage(page) {
-        await this.fetchData({_page: page, _limit: this.entriesPerPage,});
+        const queryOptions = {_page: page, _limit: this.entriesPerPage,};
+        if (this.sortOptions.field) {
+          queryOptions._sort = this.sortOptions.field;
+          queryOptions._order = this.sortOptions.direction;
+        }
+        await this.fetchData(queryOptions);
         this.currentPage = page;
       },
       async changeEntriesPerPage(amount) {
-        await this.fetchData({_page: 1, _limit: amount,});
+        const queryOptions = {_page: 1, _limit: amount,};
+        if (this.sortOptions.field) {
+          queryOptions._sort = this.sortOptions.field;
+          queryOptions._order = this.sortOptions.direction;
+        }
+        await this.fetchData(queryOptions);
         this.currentPage = 1;
         this.entriesPerPage = amount;
       },
       async visibilityChanged(isVisible) {
         if (isVisible && this.currentPage < this.pageCount) {
           this.currentPage++;
-          await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
+          const queryOptions = {_page: this.currentPage, _limit: this.entriesPerPage,};
+          if (this.sortOptions.field) {
+            queryOptions._sort = this.sortOptions.field;
+            queryOptions._order = this.sortOptions.direction;
+          }
+          await this.fetchData(queryOptions);
         }
       },
     },

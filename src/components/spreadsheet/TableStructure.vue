@@ -1,6 +1,11 @@
 <script>
+  import SortControl from '@/components/SortControl.vue';
+
   export default {
     name: 'TableStructure',
+    components: {
+      SortControl,
+    },
     props: {
       rows: {
         type: Array,
@@ -16,7 +21,13 @@
           return h(
             'th',
             { class: { 'thead-cell': true }, },
-            [renderedLabel],
+            [
+              renderedLabel,
+              h(SortControl, {
+                props: { field: column.field },
+                on: this.$listeners,
+              }),
+            ],
           );
         });
       },
@@ -70,4 +81,8 @@
 </script>
 
 <style scoped>
+  .thead-cell {
+    position: relative;
+    padding-right: 1em;
+  }
 </style>

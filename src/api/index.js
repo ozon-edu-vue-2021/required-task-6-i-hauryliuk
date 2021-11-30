@@ -11,7 +11,7 @@ const getCount = (response) => {
     header
       .split(', ')
       .filter((item) => item.includes('last'))[0]
-      .match(/\?_page=(\d+)/)[1]
+      .match(/_page=(\d+)/)[1]
   );
 };
 
