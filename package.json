@@ -6,12 +6,13 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "fake-api": "npx json-server -H 0.0.0.0 -p 3001 -d 2000 -w db.json"
+    "fake-api": "npx json-server -H 0.0.0.0 -p 3001 -d 1000 -w db.json"
   },
   "dependencies": {
     "core-js": "^3.6.5",
     "normalize.css": "^8.0.1",
-    "vue": "^2.6.11"
+    "vue": "^2.6.11",
+    "vue-observe-visibility": "^1.0.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

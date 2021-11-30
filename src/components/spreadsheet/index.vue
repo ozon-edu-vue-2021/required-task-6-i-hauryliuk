@@ -1,7 +1,6 @@
 <template>
   <div>
-
-    <div v-if="users">
+    <div class="content" v-if="users">
       <div>
         <button @click="setPaginatonMode('static')"><span>Static Pagination</span></button>
         <button @click="setPaginatonMode('infinite')"><span>Infinite Pagination</span></button>
@@ -39,11 +38,12 @@
         @goto-page="gotoPage"
         @entries-perpage-changes="changeEntriesPerPage"
       />
+
+      <div v-if="isInfiniteMode" v-observe-visibility="visibilityChanged"></div>
     </div>
 
-    <div v-else>
-      Loading ...
-    </div>
+    <LoadIndicator  v-if="loading" />
+
     <div v-if="users && !users.length">
       <p>There is no data</p>
     </div>
@@ -55,6 +55,12 @@
   import TableStructure from '@/components/spreadsheet/TableStructure.vue';
   import Column from '@/components/spreadsheet/Column.vue';
   import Paginator from '@/components/spreadsheet/Paginator.vue';
+  import LoadIndicator from '@/components/LoadIndicator.vue';
+
+  const INIT_CURRENT_PAGE = 1;
+  const INIT_ENTRIES_PER_PAGE = 20;
+  const STATIC_MODE = 'static';
+  const INFINITE_MODE = 'infinite';
 
   export default {
     name: 'Spreadsheet',
@@ -62,67 +68,74 @@
       TableStructure,
       Column,
       Paginator,
+      LoadIndicator,
     },
     async created() {
-      const data = await api.getUsersData();
-      this.users = data.users;
-      this.pageCount = data.count;
+      await this.fetchData();
     },
     data: () => ({
       users: null,
-      currentPage: 1,
-      entriesPerPage: 20,
+      currentPage: INIT_CURRENT_PAGE,
+      entriesPerPage: INIT_ENTRIES_PER_PAGE,
       pageCount: null,
       paginationMode: null,
+      loading: false,
     }),
     computed: {
       isStaticMode() {
-        return this.paginationMode === 'static';
+        return this.paginationMode === STATIC_MODE;
       },
-    },
-    watch: {
-      async paginationMode(mode) {
-        this.users = null;
-        this.currentPage = 1;
-        this.entriesPerPage = 20;
-        let data = null;
-        switch (mode) {
-          case 'static':
-            data = await api.getUsersData({_page: this.currentPage, _limit: this.entriesPerPage,});
-            this.users = data.users
-            this.pageCount = data.count;
-            break;
-          case 'infinite':
-            break;
-          default:
-            data = await api.getUsersData();
-            this.users = data.users
-            this.pageCount = data.count;
-        }
+      isInfiniteMode() {
+        return this.paginationMode === INFINITE_MODE;
       },
     },
     methods: {
-      setPaginatonMode(mode) {
+      async fetchData(params) {
+        this.loading = true;
+        const data = await api.getUsersData(params);
+        this.loading = false;
+        this.isInfiniteMode && this.users ? this.users.push(...data.users) : this.users = data.users;
+        this.pageCount = data.count;
+      },
+      async setPaginatonMode(mode) {
         this.paginationMode === mode
           ? this.paginationMode = null
           : this.paginationMode = mode;
+        this.users = null;
+        this.currentPage = INIT_CURRENT_PAGE;
+        this.entriesPerPage = INIT_ENTRIES_PER_PAGE;
+        switch (this.paginationMode) {
+          case STATIC_MODE:
+            await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
+            break;
+          case INFINITE_MODE:
+            await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
+            break;
+          default:
+            await this.fetchData();
+        }
       },
       async gotoPage(page) {
-        const data = await api.getUsersData({_page: page, _limit: this.entriesPerPage,});
-        this.users = data.users
-        this.pageCount = data.count;
+        await this.fetchData({_page: page, _limit: this.entriesPerPage,});
         this.currentPage = page;
       },
       async changeEntriesPerPage(amount) {
-        this.entriesPerPage = amount;
-        const data = await api.getUsersData({_page: 1, _limit: this.entriesPerPage,});
+        await this.fetchData({_page: 1, _limit: amount,});
         this.currentPage = 1;
-        this.users = data.users;
-        this.pageCount = data.count;
-      }
+        this.entriesPerPage = amount;
+      },
+      async visibilityChanged(isVisible) {
+        if (isVisible && this.currentPage < this.pageCount) {
+          this.currentPage++;
+          await this.fetchData({_page: this.currentPage, _limit: this.entriesPerPage,});
+        }
+      },
     },
   };
 </script>
 
 <style scoped>
+  .content {
+    padding-bottom: 6px;
+  }
 </style>

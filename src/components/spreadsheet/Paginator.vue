@@ -38,7 +38,7 @@
     },
     methods: {
       gotoPageClickHandler(page) {
-        if (this.currentPage === page || page <= 0 || page > this.lastPage) return;
+        if (page === this.currentPage || page <= 0 || page > this.lastPage) return;
         this.$emit('goto-page', page);
       },
       entriesChangeHandler(event) {
