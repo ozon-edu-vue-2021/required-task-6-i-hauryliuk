@@ -29,7 +29,7 @@
           <template #label>Phone</template>
 
           <template #data="row">
-            <a :href="`tel:${row.phone.split(' ').join('')}`">{{ row.phone }}</a>
+            <a :href="`tel:${row.phone.replace(/[^0-9+]/g, '')}`">{{ row.phone }}</a>
           </template>
         </Column>
 
