@@ -1,4 +1,4 @@
-const API_URL = 'http://192.168.99.50';
+const API_URL = 'http://localhost';
 const API_PORT = '3001';
 const API_END_POINT = 'users';
 

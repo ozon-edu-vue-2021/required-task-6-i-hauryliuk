@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "fake-api": "npx json-server -H 0.0.0.0 -p 3001 -d 1000 -w db.json"
+    "fake-api": "npx json-server -p 3001 -w db.json"
   },
   "dependencies": {
     "core-js": "^3.6.5",
